@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
+import re
 
 from app.core.config import settings
 from app.core.logging_config import get_logger
@@ -24,15 +25,31 @@ class Base(DeclarativeBase):
     pass
 
 
-# Create async engine
-engine: AsyncEngine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    pool_pre_ping=True,
-    echo_pool=settings.DEBUG,
-)
+def _is_sqlite_url(url: str) -> bool:
+    """Check if database URL is for SQLite."""
+    return url.startswith("sqlite") or "sqlite" in url
+
+
+# Create async engine with appropriate pool settings for the database type
+db_url = settings.DATABASE_URL
+if _is_sqlite_url(db_url):
+    # SQLite doesn't support pool_size/max_overflow
+    engine: AsyncEngine = create_async_engine(
+        db_url,
+        echo=settings.DEBUG,
+        poolclass=NullPool,
+        echo_pool=settings.DEBUG,
+    )
+else:
+    # PostgreSQL with connection pooling
+    engine: AsyncEngine = create_async_engine(
+        db_url,
+        echo=settings.DEBUG,
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        pool_pre_ping=True,
+        echo_pool=settings.DEBUG,
+    )
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(

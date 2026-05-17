@@ -126,9 +126,12 @@ def decode_token(token: str) -> Optional[TokenData]:
             algorithms=[settings.JWT_ALGORITHM],
         )
         
-        user_id: Optional[int] = payload.get("sub")
+        # JWT spec requires 'sub' to be a string, convert to int for user_id
+        sub = payload.get("sub")
+        user_id: Optional[int] = int(sub) if sub is not None else None
         email: Optional[str] = payload.get("email")
-        exp: Optional[datetime] = payload.get("exp")
+        exp_timestamp = payload.get("exp")
+        exp: Optional[datetime] = datetime.fromtimestamp(exp_timestamp) if exp_timestamp else None
         
         if user_id is None:
             return None
@@ -137,6 +140,9 @@ def decode_token(token: str) -> Optional[TokenData]:
         
     except JWTError as e:
         logger.warning("token_decode_failed", error=str(e))
+        return None
+    except (ValueError, TypeError) as e:
+        logger.warning("token_decode_invalid_subject", error=str(e))
         return None
 
 
