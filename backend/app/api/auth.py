@@ -59,7 +59,7 @@ async def login(
     
     # Create tokens
     token_data = {
-        "sub": user.id,
+        "sub": str(user.id),  # JWT spec requires 'sub' to be a string
         "email": user.email,
         "role": user.role.value,
     }
@@ -109,7 +109,7 @@ async def refresh_token(
     
     # Create new tokens
     new_token_data = {
-        "sub": user.id,
+        "sub": str(user.id),  # JWT spec requires 'sub' to be a string
         "email": user.email,
         "role": user.role.value,
     }

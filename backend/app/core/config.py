@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000"
+    CORS_ORIGINS: list[str] | str = "http://localhost:3000"
     CORS_ALLOW_CREDENTIALS: bool = True
 
     # Logging
